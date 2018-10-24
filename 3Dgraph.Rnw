@@ -1,0 +1,188 @@
+\documentclass{tufte-book}
+\usepackage{graphicx}  % werken met figuren
+\usepackage{gensymb} % werken met wetenschappelijke eenheden\usepackage{geometry}
+\usepackage{changepage} % http://ctan.org/pkg/changepage
+\usepackage[dutch,british]{babel} % instelling van de taal (woordsplitsing, spellingscontrole)
+\usepackage[parfill]{parskip} % Paragrafen gescheiden door witte lijn en geen inspringing
+\usepackage[font=small,skip=3pt]{caption} % Minder ruimte tussen figuur/table en ondertitel. Ondertitel klein
+\usepackage{capt-of}
+\usepackage{indentfirst}
+\setlength{\parindent}{0.7cm}
+\usepackage{enumitem} % Laat enumerate werken met letters
+\usepackage{url}
+\usepackage{lipsum}
+\setkeys{Gin}{width=\linewidth,totalheight=\textheight,keepaspectratio}
+% Prints a trailing space in a smart way.
+\usepackage{xspace}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{xcolor}
+
+\DeclareGraphicsExtensions{.pdf,.png,.jpg}
+
+% Alter some LaTeX defaults for better treatment of figures:
+% See p.105 of "TeX Unbound" for suggested values.
+% See pp. 199-200 of Lamport's "LaTeX" book for details.
+%   General parameters, for ALL pages:
+    \renewcommand{\topfraction}{0.9}	% max fraction of floats at top
+    \renewcommand{\bottomfraction}{0.9}	% max fraction of floats at bottom
+%   Parameters for TEXT pages (not float pages):
+    \setcounter{topnumber}{2}
+    \setcounter{bottomnumber}{2}
+    \setcounter{totalnumber}{4}     % 2 may work better
+    \renewcommand{\textfraction}{0.1}	% allow minimal text w. figs
+%   Parameters for FLOAT pages (not text pages):
+    \renewcommand{\floatpagefraction}{0.8}	% require fuller float pages
+% N.B.: floatpagefraction MUST be less than topfraction !!
+\setcounter{secnumdepth}{3}
+
+\newcommand{\tthdump}[1]{#1}
+
+\newcommand{\openepigraph}[2]{
+  \begin{fullwidth}
+  \sffamily\large
+    \begin{doublespace}
+      \noindent\allcaps{#1}\\ % epigraph
+      \noindent\allcaps{#2} % author
+    \end{doublespace}
+  \end{fullwidth}
+}
+
+
+\usepackage{makeidx}
+\makeindex
+
+\title{Making 3D-graphs in R}
+\author{Jan Trommelmans}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE,prefix.string=3D}
+\setkeys{Gin}{width=1.1\marginparwidth} %% Sweave
+
+<<echo=FALSE>>=
+library(tidyverse)
+library(gridExtra)
+library(plot3D)
+library(plotly)
+library(processx)
+library(scatterplot3d)
+library(rgl)
+@
+
+% Setting the ggplot theme:
+<<echo=FALSE>>=
+JT.theme <- theme(panel.border = element_rect(fill = NA, colour = "gray10"),
+                  panel.background = element_blank(),
+                  panel.grid.major = element_line(colour = "gray85"),
+                  panel.grid.minor = element_line(colour = "gray85"),
+                  panel.grid.major.x = element_line(colour = "gray85"),
+                  axis.text = element_text(size = 8 , face = "bold"),
+                  axis.title = element_text(size = 9 , face = "bold"),
+                  plot.title = element_text(size = 12 , face = "bold"),
+                  strip.text = element_text(size = 8 , face = "bold"),
+                  strip.background = element_rect(colour = "black"),
+                  legend.text = element_text(size = 8),
+                  legend.title = element_text(size = 9 , face = "bold"),
+                  legend.background = element_rect(fill = "white"),
+                  legend.key = element_rect(fill = "white"))
+@
+
+% Functions
+
+\frontmatter
+\chapter*{Making 3D graphs in R}
+
+\mainmatter
+\chapter{Some packages and their output}
+
+<<echo=TRUE>>=
+# Loading Income data set
+Income <- read.csv("data/Income.csv", header=TRUE, sep=",")
+x <- Income$Education
+y <- Income$Seniority
+z <- Income$Income
+@
+
+\section{\textbf{plot3D}-package}
+
+A nice and flexible package resulting in Figure~\ref{fig:plot3D}.
+
+<<label=plot3D,fig=TRUE,include=FALSE, echo=TRUE>>=
+xyz.fit <- lm(z ~ x + y)
+x.pred <- seq(min(x), max(x), length.out = 50)
+y.pred <- seq(min(y), max(y), length.out = 50)
+xy <- expand.grid(x = x.pred, y = y.pred)
+z.pred <- matrix(predict(xyz.fit, newdata = xy), 
+                 nrow = 50, ncol = 50)
+fitpoints <- predict(xyz.fit)
+scatter3D(x, y, z, 
+          bt = "b2", # box type
+          pch = 21, cex = 0.7, col="red", # shape, size , color of data points
+          theta = 25, phi = 20, # viewing angel horiz and vert
+          ticktype = "detailed", # detailed ticks on axis
+          xlab = "Education", # label x-axis
+          ylab = "Seniority", # label y-axis
+          zlab = "Income",  # label z-axis
+          surf = list(x = x.pred, y = y.pred, z = z.pred,  # coordinates of surface
+                      facets = FALSE, # coloring of the surface facets
+                      fit=fitpoints, # drax line from surface to data point
+                      col=gg.col(1,0.5)), # color pattern (1 = only one color) and alpha value
+          main = "3D-plot with plot3D", # main title
+          colkey = FALSE) # no legend
+@
+
+\begin{figure}
+\includegraphics[width=1\textwidth]{3D-plot3D}
+\caption{3D plot with package plot3D}
+\label{fig:plot3D}
+\setfloatalignment{b}% forces caption to be bottom-aligned
+\end{figure}
+
+\section{\textit{plotly}-package}
+
+A lot of hassle with exporting the resulting pdf.
+
+\section{\textit{rgl}-package}
+
+Makes the graph in a separate X-device window. Poor control of view angle and of axis labels. Not practical.
+
+\section{\textit{scatterplot3d}-function in package \textbf{scatterplot3d}}
+
+You can control the angle, the shape and color of the points. It only gives a regression \textbf{plane}. (Figure~\ref{fig:scatterplot3d}).
+
+<<label=scatterplot3d,fig=TRUE,include=FALSE, echo=TRUE>>=
+# Making the graphs
+s3d <- scatterplot3d(x=x, 
+                     y=y, 
+                     z=z, 
+                     angle=40, pch=16, color="Red",
+                     main="3D Scatterplot", 
+                     xlab="Education (yr)", 
+                     ylab="Seniority (yr)", 
+                     zlab="Income",
+                    grid = TRUE,
+                    box = TRUE)
+# Adding a regression plane
+my.lm <- lm(z ~ x + y)
+s3d$plane3d(my.lm)
+@
+
+\begin{marginfigure}[-6cm]
+\includegraphics[width=0.8\textwidth]{3D-scatterplot3d}
+\caption{}
+\label{fig:scatterplot3d}
+\setfloatalignment{b}% forces caption to be bottom-aligned
+\end{marginfigure}
+
+
+
+\newpage
+\textbf{Thanks} \\
+\medskip
+R Core Team (2018). R: A language and environment for statistical computing. R Foundation for Statistical Computing, Vienna, Austria. URL https://www.R-project.org/.
+\medskip
+<<>>=
+sessionInfo()
+@
+
+\end{document}
