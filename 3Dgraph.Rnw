@@ -138,6 +138,55 @@ scatter3D(x, y, z,
 \setfloatalignment{b}% forces caption to be bottom-aligned
 \end{figure}
 
+The package gives the classic ''grob" problems when combined with packag \textbf{gridExtra}, but multiple plots can be obtained using the par(mfrow) command. Some adjustment of the margins is necessary (see par(mar))
+
+<<label=plot3DandgridExtra,fig=TRUE,include=FALSE, echo=TRUE>>=
+par(mfrow=c(1,2))
+xyz.fit <- lm(z ~ x + y)
+x.pred <- seq(min(x), max(x), length.out = 50)
+y.pred <- seq(min(y), max(y), length.out = 50)
+xy <- expand.grid(x = x.pred, y = y.pred)
+z.pred <- matrix(predict(xyz.fit, newdata = xy), 
+                 nrow = 50, ncol = 50)
+fitpoints <- predict(xyz.fit)
+par(mar = c(0.5, 0.5, 0.5, 0.5))
+p1 <- scatter3D(x, y, z, 
+          bt = "b2", # box type
+          pch = 21, cex = 0.7, col="red", # shape, size , color of data points
+          theta = 25, phi = 20, # viewing angel horiz and vert
+          ticktype = "detailed", # detailed ticks on axis
+          xlab = "Education", # label x-axis
+          ylab = "Seniority", # label y-axis
+          zlab = "Income",  # label z-axis
+          surf = list(x = x.pred, y = y.pred, z = z.pred,  # coordinates of surface
+                      facets = FALSE, # coloring of the surface facets
+                      fit=fitpoints, # drax line from surface to data point
+                      col=gg.col(1,0.5)), # color pattern (1 = only one color) and alpha value
+          colkey = FALSE) # no legend
+p2 <- scatter3D(x, y, z, 
+          bt = "b1", # box type
+          pch = 21, cex = 0.7, col="blue", # shape, size , color of data points
+          theta = 45, phi = 10, # viewing angel horiz and vert
+          ticktype = "detailed", # detailed ticks on axis
+          xlab = "Education", # label x-axis
+          ylab = "Seniority", # label y-axis
+          zlab = "Income",  # label z-axis
+          surf = list(x = x.pred, y = y.pred, z = z.pred,  # coordinates of surface
+                      facets = FALSE, # coloring of the surface facets
+                      fit=fitpoints, # drax line from surface to data point
+                      col=gg.col(1,0.5)), # color pattern (1 = only one color) and alpha value
+          colkey = FALSE) # no legend
+par(mfrow=c(1,1))
+@
+
+\begin{figure}[h]
+\includegraphics[width=0.9\textwidth]{3D-plot3DandgridExtra}
+\caption{Multiple plots with \textbf{plot3D} and par(mfrow)}
+\label{fig:plot3DandgridExtra}
+\setfloatalignment{m}% forces caption to be bottom-aligned
+\end{figure}
+
+\newpage
 \section{\textit{plotly}-package}
 
 A lot of hassle with exporting the resulting pdf.
